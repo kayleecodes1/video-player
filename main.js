@@ -111,6 +111,21 @@ volumeCurrent.className = 'current';
 volumeSlider.appendChild( volumeCurrent );
 volume.appendChild( volumeSlider );
 controls.appendChild( volume );
+
+/*TODO
+var savedVolume = 1;
+var toggleMute = function () {
+	if( video.volume !== 0 ) {
+		var oldSavedVolume = savedVolume;
+		video.volume = setVolume( 0 );
+		savedVolume = oldSavedVolume;
+	} else {
+		video.volume = setVolume( savedVolume || 1 );
+	}
+};
+volume.addEventListener( 'click', function ( event ) {
+	toggleMute();
+});*/
 var setVolume = function ( val ) {
 	if( val < 0.35 ) { volume.className = 'volume volumeLow'; }
 	else if( val >= 0.35 && val <= 0.65 ) { volume.className = 'volume volumeMid'; }
