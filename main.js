@@ -1,5 +1,5 @@
 var element = document.getElementById( 'player' );
-element.className = 'videoPlayer';
+element.className = 'videoPlayer paused';
 
 /*
 <video controls> 
@@ -11,32 +11,56 @@ element.className = 'videoPlayer';
 */
 
 var video = document.createElement( 'video' );
+video.setAttribute( 'preload', 'metadata' );
 var source = document.createElement( 'source' );
 source.type = 'video/mp4';
 source.src = element.getAttribute( 'src' );
 video.appendChild( source );
 element.appendChild( video );
 
+var isPlaying = false;
+var play = function () {
+	isPlaying = true;
+	video.play();
+	element.className = 'videoPlayer playing';
+};
+var pause = function () {
+	isPlaying = false;
+	video.pause();
+	element.className = 'videoPlayer paused';
+};
+var togglePlay = function () {
+	video.paused ? play() : pause();
+};
+
+element.setAttribute( 'tabindex', '0' );
+element.addEventListener( 'keydown', function ( event ) {
+	if ( ( event.which || e.keyCode ) === 32 ) {
+		togglePlay();
+		event.preventDefault();
+	}
+});
+
+var overlay = document.createElement( 'div' );
+overlay.className = 'overlay';
+overlay.addEventListener( 'click', togglePlay );
+element.appendChild( overlay );
+
+var info = document.createElement( 'div' );
+info.className = 'info';
+var title = document.createElement( 'div' );
+title.className = 'title';
+title.innerHTML = element.getAttribute( 'title' );
+info.appendChild( title );
+element.appendChild( info );
+
 var controls = document.createElement( 'div' );
 controls.className = 'controls';
 
 // Play Control
 var playControl = document.createElement( 'div' );
-playControl.className = 'play';
-var isPlaying = false;
-var play = function () {
-	isPlaying = true;
-	video.play();
-	playControl.className = 'pause';
-};
-var pause = function () {
-	isPlaying = false;
-	video.pause();
-	playControl.className = 'play';
-};
-playControl.addEventListener( 'click', function ( event ) {
-	video.paused ? play() : pause();
-});
+playControl.className = 'playControl';
+playControl.addEventListener( 'click', togglePlay );
 controls.appendChild( playControl );
 
 // Progress
@@ -48,12 +72,46 @@ currentTime.className = 'currentTime';
 
 var progressBar = document.createElement( 'div' );
 progressBar.className = 'progressBar';
+var progressInner = document.createElement( 'div' );
+progressInner.className = 'progressInner';
 var buffer = document.createElement( 'div' );
 buffer.className = 'buffer';
 var current = document.createElement( 'div' );
 current.className = 'current';
-progressBar.appendChild( buffer );
-progressBar.appendChild( current );
+var currentHandle = document.createElement( 'div' );
+currentHandle.className = 'currentHandle';
+var hoverTime = document.createElement( 'div' );
+hoverTime.className = 'hoverTime';
+progressInner.appendChild( buffer );
+progressInner.appendChild( current );
+progressBar.appendChild( progressInner );
+progressBar.appendChild( currentHandle );
+progressBar.appendChild( hoverTime );
+
+var updateHoverTime = function ( event ) {
+	var offsetLeft = calculateOffsetLeft( progressBar );
+    var location = ( event.pageX - offsetLeft ) / progressBar.offsetWidth;
+    location = Math.min( 1, Math.max( 0, location ) );
+	hoverTime.style.left = ( location * 100 ) + '%';
+	hoverTime.innerHTML = formatSeconds( location * video.duration );
+};
+var hovering = false;
+progressBar.addEventListener( 'mouseover', function ( event ) {
+	hovering = true;
+    hoverTime.style.display = 'block';
+    updateHoverTime( event );
+});
+document.addEventListener( 'mousemove', function ( event ) {
+	if( clicking || hovering ) {
+		updateHoverTime( event );
+	}
+});
+progressBar.addEventListener( 'mouseout', function ( event ) {
+	if( !clicking ) {
+		hoverTime.style.display = 'none';
+	}
+	hovering = false;
+});
 
 var clicking = false;
 var wasPlaying = false;
@@ -61,35 +119,33 @@ progressBar.addEventListener( 'mousedown', function ( event ) {
 	clicking = true;
 	wasPlaying = isPlaying;
 	if( wasPlaying ) { video.pause(); }
-	var newProgress = event.offsetX / progressBar.offsetWidth;
-	video.currentTime = newProgress * video.duration;
+	var offsetLeft = calculateOffsetLeft( progressBar );
+	var location = ( event.pageX - offsetLeft ) / progressBar.offsetWidth;
+	video.currentTime = location * video.duration;
 });
 document.addEventListener( 'mousemove', function ( event ) {
 	if( clicking ) {
-		var offsetLeft = 0;
-		var node = progressBar;
-        do {
-            offsetLeft += node.offsetLeft;
-        } while ( node = node.offsetParent );
-		var location = ( event.clientX - offsetLeft ) / progressBar.offsetWidth;
+		var offsetLeft = calculateOffsetLeft( progressBar );
+		var location = ( event.pageX - offsetLeft ) / progressBar.offsetWidth;
 		setVideoTime( Math.min( 1, Math.max( 0, location ) ) * video.duration );
-	};
+	}
 });
 var setVideoTime = function ( time ) {
-	console.log( time );
 	currentTime.innerHTML = formatSeconds( time );
 	var start = ( video.buffered.start( 0 ) || 0 ) / video.duration * 100;
 	var actual = time / video.duration * 100;
 	current.style.left = start + '%';
 	current.style.right = ( 100 - actual ) + '%';
+	currentHandle.style.right = ( 100 - actual ) + '%';
 	video.currentTime = time;
 };
 document.addEventListener( 'mouseup', function ( event ) {
-	if( clicking ) {
-		clicking = false;
-		if( wasPlaying ) {
-			video.play();
-		}
+	if( clicking && wasPlaying ) {
+		video.play();
+	}
+	clicking = false;
+	if( !hovering ) {
+		hoverTime.style.display = 'none';
 	}
 });
 
@@ -102,84 +158,125 @@ progress.appendChild( duration );
 
 controls.appendChild( progress );
 
+
+//------------------------------------------------------------------------------
+// Volume Controls
+//------------------------------------------------------------------------------
+
 var volume = document.createElement( 'div' );
 volume.className = 'volume volumeHigh';
+var volumeIcon = document.createElement( 'div' );
+volumeIcon.className = 'volumeIcon';
 var volumeSlider = document.createElement( 'div' );
 volumeSlider.className = 'slider';
+var volumeSliderInner = document.createElement( 'div' );
+volumeSliderInner.className = 'sliderInner';
 var volumeCurrent = document.createElement( 'div' );
 volumeCurrent.className = 'current';
-volumeSlider.appendChild( volumeCurrent );
+var volumeCurrentHandle = document.createElement( 'div' );
+volumeCurrentHandle.className = 'currentHandle';
+volumeSliderInner.appendChild( volumeCurrent );
+volumeSlider.appendChild( volumeSliderInner );
+volumeSlider.appendChild( volumeCurrentHandle );
+volume.appendChild( volumeIcon );
 volume.appendChild( volumeSlider );
 controls.appendChild( volume );
 
-/*TODO
-var savedVolume = 1;
 var toggleMute = function () {
-	if( video.volume !== 0 ) {
-		var oldSavedVolume = savedVolume;
-		video.volume = setVolume( 0 );
-		savedVolume = oldSavedVolume;
+	if( video.muted ) {
+		video.muted = false;
+		setVolumeSlider( 0 );
 	} else {
-		video.volume = setVolume( savedVolume || 1 );
+		video.muted = true;
+		setVolumeSlider( video.volume );
 	}
 };
-volume.addEventListener( 'click', function ( event ) {
+volumeIcon.addEventListener( 'click', function ( event ) {
 	toggleMute();
-});*/
+});
 var setVolume = function ( val ) {
-	if( val < 0.35 ) { volume.className = 'volume volumeLow'; }
-	else if( val >= 0.35 && val <= 0.65 ) { volume.className = 'volume volumeMid'; }
-	else { volume.className = 'volume volumeHigh'; }
-	volumeCurrent.style.top = ( 100 - ( val * 100 ) ) + '%';
 	video.volume = val;
+	setVolumeSlider( val );
 };
-volume.addEventListener( 'mouseover', function ( event ) {
-	volumeSlider.style.display = 'block';
-});
-volume.addEventListener( 'mouseout', function ( event ) {
-	volumeSliding = false;
-	volumeSlider.style.display = 'none';
-});
+var setVolumeSlider = function ( val ) {
+	if( val < 0.3 ) { volume.className = 'volume volumeLow'; }
+	else if( val >= 0.3 && val <= 0.7 ) { volume.className = 'volume volumeMid'; }
+	else { volume.className = 'volume volumeHigh'; }
+	volumeCurrent.style.right = ( 100 - ( val * 100 ) ) + '%';
+	volumeCurrentHandle.style.right = ( 100 - ( val * 100 ) ) + '%';
+};
+var updateVolume = function ( event ) {
+	var offsetLeft = calculateOffsetLeft( volumeSlider );
+	var location = ( event.pageX - offsetLeft ) / volumeSlider.offsetWidth;
+	location = Math.min( 1, Math.max( 0, location ) );
+	setVolume( location );
+};
 var volumeSliding = false;
 volumeSlider.addEventListener( 'mousedown', function ( event ) {
 	volumeSliding = true;
-	var newVolume = ( volumeSlider.offsetHeight - event.offsetY ) / volumeSlider.offsetHeight;
-	setVolume( newVolume );
+	updateVolume( event );
 });
 document.addEventListener( 'mousemove', function ( event ) {
 	if( volumeSliding ) {
-		var offsetTop = 0;
-		var node = volumeSlider;
-        do {
-            offsetTop += node.offsetTop;
-        } while ( node = node.offsetParent );
-		var location = ( volumeSlider.offsetHeight - ( event.clientY - offsetTop ) ) / volumeSlider.offsetHeight;
-		setVolume( Math.min ( 1, Math.max( 0, location ) ) );
+		updateVolume( event );
 	};
 });
 document.addEventListener( 'mouseup', function ( event ) {
 	volumeSliding = false;
 });
 
+//////////
+
+var fullscreen = document.createElement( 'div' );
+fullscreen.className = 'fullscreen';
+var toggleFullscreen = function () {
+
+	var hasFullscreenSupport = document.fullscreenEnabled || document.webkitFullscreenEnabled || 
+    	document.mozFullScreenEnabled || document.msFullscreenEnabled;
+	if( !hasFullscreenSupport ) {
+    	console.log('No fullscreen support.');
+    	return;
+    }
+
+	if( document.fullscreenElement || document.webkitFullscreenElement ||
+	    document.mozFullScreenElement || document.msFullscreenElement )
+	{
+		if( document.exitFullscreen ) { document.exitFullscreen(); }
+		else if( document.webkitExitFullscreen ) { document.webkitExitFullscreen(); }
+		else if( document.mozCancelFullScreen ) { document.mozCancelFullScreen(); }
+		else if( document.msExitFullscreen ) { document.msExitFullscreen(); }
+		//TODO: change size back
+    } else {
+    	if( element.requestFullscreen ) { element.requestFullscreen(); }
+    	else if( element.webkitRequestFullscreen ) { element.webkitRequestFullscreen(); }
+    	else if( element.mozRequestFullScreen ) { element.mozRequestFullScreen(); }
+		else if( element.msRequestFullscreen ) { element.msRequestFullscreen(); }
+		//TODO: resize
+    }
+};
+fullscreen.addEventListener( 'click', toggleFullscreen );
+controls.appendChild( fullscreen );
+
 element.appendChild( controls );
 
 // Video events
 video.onprogress = function ( event ) {
-	var start = ( video.buffered.start( 0 ) || 0 ) / video.duration * 100;
-	var end = ( video.buffered.end( 0 ) || 0 ) / video.duration * 100;
+	var start = ( video.buffered.length ? video.buffered.start( 0 ) : 0 ) / video.duration * 100;
+	var end = ( video.buffered.length ? video.buffered.end( 0 ) : 0 ) / video.duration * 100;
 	buffer.style.left = start + '%';
 	buffer.style.right = ( 100 - end ) + '%';
 };
 video.onwaiting = function ( event ) {
-	//TODO: needs to buffer
-	console.log( 'waiting', arguments );
+	element.className = 'videoPlayer loading';
+	console.log( 'waiting' );
 };
 video.oncanplay = function ( event ) {
-	//TODO: can start playing the video
+	//element.className = 'videoPlayer paused';
+	console.log( 'canplay' );
 };
 video.onplaying = function ( event ) {
-	//TODO: buffered and continuing
-	console.log( 'playing', arguments );
+	element.className = 'videoPlayer playing';
+	console.log( 'playing' );
 };
 video.ontimeupdate = function ( event ) {
 	currentTime.innerHTML = formatSeconds( video.currentTime );
@@ -187,19 +284,54 @@ video.ontimeupdate = function ( event ) {
 	var actual = video.currentTime / video.duration * 100;
 	current.style.left = start + '%';
 	current.style.right = ( 100 - actual ) + '%';
+	currentHandle.style.right = ( 100 - actual ) + '%';
 	if( video.currentTime === video.duration ) { pause(); }
 };
 video.onloadedmetadata = function ( event ) {
+	// Resize video.
+	var widthProportion =  element.offsetWidth / video.videoWidth;
+	var heightProportion = element.offsetHeight / video.videoHeight;
+	//TODO: test
+	video.width = element.offsetWidth;
+	video.height = element.offsetHeight;
+	/*if( widthProportion < heightProportion ) {
+		video.width = element.offsetWidth;
+		video.height = video.videoHeight * widthProportion;
+		video.style.left = '0';
+		video.style.top = ( ( element.offsetHeight - video.height ) / 2 ) + 'px';
+	} else {
+		video.width = video.videoWidth * heightProportion;
+		video.height = element.offsetHeight;
+		video.style.left = ( ( element.offsetWidth - video.width ) / 2 ) + 'px';
+		video.style.top = '0';
+	}*/
+	// Set up progress bar.
 	currentTime.innerHTML = formatSeconds( video.currentTime );
 	duration.innerHTML = formatSeconds( video.duration );
+	// Volume.
+	setVolumeSlider( video.volume );
 };
 video.onloadeddata = function ( event ) {
-	element.style.width = video.videoWidth  + 'px';
-	element.style.height = video.videoHeight + 'px';
-	setVolume( video.volume );
+	//TODO
 };
 
 // Utility
+var calculateOffsetLeft = function ( element ) {
+	var offsetLeft = 0;
+	var node = element;
+	do {
+        offsetLeft += node.offsetLeft;
+    } while ( node = node.offsetParent );
+    return offsetLeft;
+};
+var calculateOffsetTop = function ( element ) {
+	var offsetTop = 0;
+	var node = element;
+	do {
+        offsetTop += node.offsetTop;
+    } while ( node = node.offsetParent );
+    return offsetTop;
+};
 function formatSeconds( sec ) {
 	var minutes = Math.floor( sec / 60 );
 	var seconds = Math.floor( sec % 60 );
