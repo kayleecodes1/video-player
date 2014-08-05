@@ -1,13 +1,22 @@
+@import 'videoIcons.less';
+
 @gutterSize: 10px;
-
 @playSize: 30px;
-
 @currentTimeWidth: 30px;
 @durationWidth: 30px;
-
 @volumeWidth: 100px;
-
 @fullscreenSize: 30px;
+
+/* Chrome, Safari, Opera */
+@-webkit-keyframes rotateAnimation {
+    from { transform: rotate( 0deg ); }
+    to { transform: rotate( 360deg ); }
+}
+/* Standard syntax */
+@keyframes rotateAnimation {
+    from {background: red;}
+    to {background: yellow;}
+}
 
 .videoPlayer {
 	position: relative;
@@ -24,35 +33,43 @@
 	margin: 0 auto;
 	overflow: hidden;
 	cursor: default;
-	&.loading {
-		.overlay:before {
-			content: 'loading';
-			//TODO
-		}
+	&.paused {
+		.overlay:before { .icon-play }
 	}
 	&.playing {
-		.controls .playControl:before { content: '\f04c'; }
+		.overlay { content: ''; }
+		.controls .playControl:before { .icon-pause; }
+	}
+	&.fullscreen {
+		width: 100%;
+		height: 100%;
+		.controls .fullscreen:before { .icon-contract; }
 	}
 	video {
-		position: absolute;
-		top: 0; left: 0;
+		width: 100%;
+		height: 100%;
 	}
 	.overlay {
 		position: absolute;
 		top: 0; right: 0; bottom: 0; left: 0;
 		&:before {
-			content: '\f04b';
 			position: absolute;
 			top: 50%; left: 50%;
 			width: 80px;
 			height: 80px;
-			font-family: 'FontAwesome';
-			font-size: 60px;
+			font-size: 80px;
 			line-height: 80px;
 			color: #f3f3f3;
 			text-align: center;
 			margin-top: -40px;
 			margin-left: -40px;
+		}
+		&.loading {
+			&:before {
+				.icon-loading;
+				-webkit-animation: rotateAnimation 3.0s linear infinite;
+				animation: rotateAnimation 3.0s linear infinite;
+			}
 		}
 	}
 	.info {
@@ -66,6 +83,10 @@
 			background: #000;
 			border-radius: 4px;
 			opacity: 0.5;
+		}
+		&.hidden {
+			top: -29px;
+			transition: top 0.5s linear;
 		}
 		.title {
 			position: relative;
@@ -89,6 +110,10 @@
 			border-radius: 4px;
 			opacity: 0.5;
 		}
+		&.hidden {
+			bottom: -41px;
+			transition: bottom 0.5s linear;
+		}
 		.playControl {
 			position: absolute;
 			left: @gutterSize;
@@ -98,11 +123,10 @@
 			text-align: center;
 			margin-top: -@playSize / 2;
 			&:before {
-				content: '\f04b';
-				font-family: 'FontAwesome';
-				font-size: 22px;
+				font-size: 28px;
 				line-height: @playSize;
 				color: #f3f3f3;
+				.icon-play;
 			};
 		}
 		.progress {
@@ -199,15 +223,16 @@
 				height: 30px;
 				text-align: center;
 				&:before {
-					font-family: 'FontAwesome';
 					font-size: 18px;
 					line-height: 30px;
 					color: #f3f3f3;
 				}
 			}
-			&.volumeHigh .volumeIcon:before { content: '\f028'; }
-			&.volumeMid .volumeIcon:before { content: '\f027'; }
-			&.volumeLow .volumeIcon:before { content: '\f026'; }
+			&.volumeHigh .volumeIcon:before { .icon-volume-high; }
+			&.volumeMid .volumeIcon:before { .icon-volume-medium; }
+			&.volumeLow .volumeIcon:before { .icon-volume-low; }
+			&.volumeNone .volumeIcon:before { .icon-volume-none; }
+			&.volumeMute .volumeIcon:before { .icon-volume-mute; }
 			.slider {
 				position: absolute;
 				top: 50%; right: 0; left: 32px;
@@ -250,8 +275,7 @@
 			text-align: center;
 			margin-top: -@fullscreenSize / 2;
 			&:before {
-				content: '\f0b2';
-				font-family: 'FontAwesome';
+				.icon-expand;
 				font-size: 22px;
 				line-height: 30px;
 				color: #f3f3f3;

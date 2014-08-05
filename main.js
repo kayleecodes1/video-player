@@ -1,5 +1,5 @@
 var element = document.getElementById( 'player' );
-element.className = 'videoPlayer paused';
+element.className = 'videoPlayer';
 
 /*
 <video controls> 
@@ -22,12 +22,14 @@ var isPlaying = false;
 var play = function () {
 	isPlaying = true;
 	video.play();
-	element.className = 'videoPlayer playing';
+	element.classList.remove( 'paused' );
+	element.classList.add( 'playing' );
 };
 var pause = function () {
 	isPlaying = false;
 	video.pause();
-	element.className = 'videoPlayer paused';
+	element.classList.remove( 'playing' );
+	element.classList.add( 'paused' );
 };
 var togglePlay = function () {
 	video.paused ? play() : pause();
@@ -56,6 +58,22 @@ element.appendChild( info );
 
 var controls = document.createElement( 'div' );
 controls.className = 'controls';
+// Show/hide elements if the mouse isn't moving over the element.
+var mousemoveTimeout = null;
+element.addEventListener( 'mousemove', function () {
+	// Clear the current timeout and reveal the elements.
+	if( mousemoveTimeout ) { clearTimeout( mousemoveTimeout ); }
+	info.classList.remove( 'hidden' );
+	controls.classList.remove( 'hidden' );
+	// If the video is playing, set a timeout.
+	if( element.classList.contains( 'playing' ) ) {
+		mousemoveTimeout = setTimeout( function () {
+			mousemoveTimeout = null;
+			info.classList.add( 'hidden' );
+			controls.classList.add( 'hidden' );
+		}, 1200);
+	}
+});
 
 // Play Control
 var playControl = document.createElement( 'div' );
@@ -185,10 +203,10 @@ controls.appendChild( volume );
 var toggleMute = function () {
 	if( video.muted ) {
 		video.muted = false;
-		setVolumeSlider( 0 );
+		setVolumeSlider( video.volume );
 	} else {
 		video.muted = true;
-		setVolumeSlider( video.volume );
+		setVolumeSlider( 0 );
 	}
 };
 volumeIcon.addEventListener( 'click', function ( event ) {
@@ -199,8 +217,9 @@ var setVolume = function ( val ) {
 	setVolumeSlider( val );
 };
 var setVolumeSlider = function ( val ) {
-	if( val < 0.3 ) { volume.className = 'volume volumeLow'; }
-	else if( val >= 0.3 && val <= 0.7 ) { volume.className = 'volume volumeMid'; }
+	if( val === 0 ) { volume.className = 'volume volumeMute' }
+	else if( val < 0.3 ) { volume.className = 'volume volumeLow'; }
+	else if( val < 0.7 ) { volume.className = 'volume volumeMid'; }
 	else { volume.className = 'volume volumeHigh'; }
 	volumeCurrent.style.right = ( 100 - ( val * 100 ) ) + '%';
 	volumeCurrentHandle.style.right = ( 100 - ( val * 100 ) ) + '%';
@@ -234,7 +253,7 @@ var toggleFullscreen = function () {
 	var hasFullscreenSupport = document.fullscreenEnabled || document.webkitFullscreenEnabled || 
     	document.mozFullScreenEnabled || document.msFullscreenEnabled;
 	if( !hasFullscreenSupport ) {
-    	console.log('No fullscreen support.');
+    	console.log( 'No fullscreen support.' );
     	return;
     }
 
@@ -245,16 +264,28 @@ var toggleFullscreen = function () {
 		else if( document.webkitExitFullscreen ) { document.webkitExitFullscreen(); }
 		else if( document.mozCancelFullScreen ) { document.mozCancelFullScreen(); }
 		else if( document.msExitFullscreen ) { document.msExitFullscreen(); }
-		//TODO: change size back
     } else {
     	if( element.requestFullscreen ) { element.requestFullscreen(); }
     	else if( element.webkitRequestFullscreen ) { element.webkitRequestFullscreen(); }
     	else if( element.mozRequestFullScreen ) { element.mozRequestFullScreen(); }
 		else if( element.msRequestFullscreen ) { element.msRequestFullscreen(); }
-		//TODO: resize
     }
 };
 fullscreen.addEventListener( 'click', toggleFullscreen );
+var fullscreenHandler = function () {
+
+	var fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement ||
+	    document.mozFullScreenElement || document.msFullscreenElement;
+	if( fullscreenElement && fullscreenElement === element ) {
+		element.classList.add('fullscreen');
+	} else {
+		element.classList.remove( 'fullscreen' );
+	}
+};
+document.addEventListener( 'fullscreenchange', fullscreenHandler );
+document.addEventListener( 'webkitfullscreenchange', fullscreenHandler );
+document.addEventListener( 'mozfullscreenchange', fullscreenHandler );
+document.addEventListener( 'MSFullscreenChange', fullscreenHandler );
 controls.appendChild( fullscreen );
 
 element.appendChild( controls );
@@ -266,17 +297,17 @@ video.onprogress = function ( event ) {
 	buffer.style.left = start + '%';
 	buffer.style.right = ( 100 - end ) + '%';
 };
+// Is waiting for buffer.
 video.onwaiting = function ( event ) {
-	element.className = 'videoPlayer loading';
-	console.log( 'waiting' );
+	overlay.className = 'overlay loading';
 };
+// Can play after buffering.
 video.oncanplay = function ( event ) {
-	//element.className = 'videoPlayer paused';
-	console.log( 'canplay' );
+	overlay.className = 'overlay';
 };
+// Starts playing after buffering.
 video.onplaying = function ( event ) {
-	element.className = 'videoPlayer playing';
-	console.log( 'playing' );
+	overlay.className = 'overlay';
 };
 video.ontimeupdate = function ( event ) {
 	currentTime.innerHTML = formatSeconds( video.currentTime );
@@ -289,11 +320,10 @@ video.ontimeupdate = function ( event ) {
 };
 video.onloadedmetadata = function ( event ) {
 	// Resize video.
-	var widthProportion =  element.offsetWidth / video.videoWidth;
-	var heightProportion = element.offsetHeight / video.videoHeight;
-	//TODO: test
-	video.width = element.offsetWidth;
-	video.height = element.offsetHeight;
+	//var widthProportion =  element.offsetWidth / video.videoWidth;
+	//var heightProportion = element.offsetHeight / video.videoHeight;
+	//video.width = element.offsetWidth;
+	//video.height = element.offsetHeight;
 	/*if( widthProportion < heightProportion ) {
 		video.width = element.offsetWidth;
 		video.height = video.videoHeight * widthProportion;
