@@ -121,6 +121,28 @@
   -moz-osx-font-smoothing: grayscale;
   content: "\e606";
 }
+.videoPlayer.ended .overlay:before {
+  font-family: 'videoIcons';
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  content: "\e601";
+}
+.videoPlayer.ended .controls .playControl:before {
+  font-family: 'videoIcons';
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  content: "\e601";
+}
 .videoPlayer.fullscreen {
   width: 100%;
   height: 100%;

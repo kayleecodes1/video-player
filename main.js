@@ -23,6 +23,7 @@ var play = function () {
 	isPlaying = true;
 	video.play();
 	element.classList.remove( 'paused' );
+	element.classList.remove( 'ended' );
 	element.classList.add( 'playing' );
 };
 var pause = function () {
@@ -316,7 +317,10 @@ video.ontimeupdate = function ( event ) {
 	current.style.left = start + '%';
 	current.style.right = ( 100 - actual ) + '%';
 	currentHandle.style.right = ( 100 - actual ) + '%';
-	if( video.currentTime === video.duration ) { pause(); }
+	if( video.currentTime === video.duration ) {
+		pause();
+		element.classList.add( 'ended' );
+	}
 };
 video.onloadedmetadata = function ( event ) {
 	// Resize video.

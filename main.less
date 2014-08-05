@@ -40,6 +40,10 @@
 		.overlay:before { content: ''; }
 		.controls .playControl:before { .icon-pause; }
 	}
+	&.ended {
+		.overlay:before { .icon-replay; }
+		.controls .playControl:before { .icon-replay; }
+	}
 	&.fullscreen {
 		width: 100%;
 		height: 100%;
