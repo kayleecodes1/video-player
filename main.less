@@ -37,7 +37,7 @@
 		.overlay:before { .icon-play }
 	}
 	&.playing {
-		.overlay { content: ''; }
+		.overlay:before { content: ''; }
 		.controls .playControl:before { .icon-pause; }
 	}
 	&.fullscreen {
@@ -63,6 +63,7 @@
 			text-align: center;
 			margin-top: -40px;
 			margin-left: -40px;
+			.icon-play;
 		}
 		&.loading {
 			&:before {

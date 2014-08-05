@@ -107,7 +107,7 @@
   -moz-osx-font-smoothing: grayscale;
   content: "\e605";
 }
-.videoPlayer.playing .overlay {
+.videoPlayer.playing .overlay:before {
   content: '';
 }
 .videoPlayer.playing .controls .playControl:before {
@@ -159,6 +159,15 @@
   text-align: center;
   margin-top: -40px;
   margin-left: -40px;
+  font-family: 'videoIcons';
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  content: "\e605";
 }
 .videoPlayer .overlay.loading:before {
   font-family: 'videoIcons';
