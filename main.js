@@ -14,7 +14,7 @@ var video = document.createElement( 'video' );
 video.setAttribute( 'preload', 'metadata' );
 var source = document.createElement( 'source' );
 source.type = 'video/mp4';
-source.src = element.getAttribute( 'src' );
+source.src = element.getAttribute( 'video-src' );
 video.appendChild( source );
 element.appendChild( video );
 
@@ -52,7 +52,7 @@ var info = document.createElement( 'div' );
 info.className = 'info';
 var title = document.createElement( 'div' );
 title.className = 'title';
-title.innerHTML = element.getAttribute( 'title' );
+title.innerHTML = element.getAttribute( 'video-title' );
 info.appendChild( title );
 element.appendChild( info );
 
