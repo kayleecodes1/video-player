@@ -293,8 +293,21 @@ element.appendChild( controls );
 
 // Video events
 video.onprogress = function ( event ) {
-	var start = ( video.buffered.length ? video.buffered.start( 0 ) : 0 ) / video.duration * 100;
-	var end = ( video.buffered.length ? video.buffered.end( 0 ) : 0 ) / video.duration * 100;
+
+	var start = 0;
+	var end = 0;
+	
+	// Find the buffer range we're currently occupying.
+	for( var i = 0; i < video.buffered.length; i++ ) {
+		var startTime = video.buffered.start( i );
+		var endTime = video.buffered.end( i );
+		if( startTime <= video.currentTime && endTime >= video.currentTime ) {
+			start = startTime / video.duration * 100;
+			end = endTime / video.duration * 100;
+			break;
+		}
+	}
+	
 	buffer.style.left = start + '%';
 	buffer.style.right = ( 100 - end ) + '%';
 };
