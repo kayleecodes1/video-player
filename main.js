@@ -307,22 +307,23 @@ video.onprogress = function ( event ) {
 			break;
 		}
 	}
-	
+
 	buffer.style.left = start + '%';
 	buffer.style.right = ( 100 - end ) + '%';
 };
 // Is waiting for buffer.
 video.onwaiting = function ( event ) {
-	overlay.className = 'overlay loading';
+	overlay.classList.add( 'loading' );
 };
 // Can play after buffering.
 video.oncanplay = function ( event ) {
-	overlay.className = 'overlay';
+	overlay.classList.remove( 'loading' );
 };
 // Starts playing after buffering.
 video.onplaying = function ( event ) {
-	overlay.className = 'overlay';
+	//
 };
+// The currentTime changes.
 video.ontimeupdate = function ( event ) {
 	currentTime.innerHTML = formatSeconds( video.currentTime );
 	var start = ( video.buffered.start( 0 ) || 0 ) / video.duration * 100;
@@ -335,6 +336,7 @@ video.ontimeupdate = function ( event ) {
 		element.classList.add( 'ended' );
 	}
 };
+// Video metadata has loaded.
 video.onloadedmetadata = function ( event ) {
 	// Resize video.
 	//var widthProportion =  element.offsetWidth / video.videoWidth;
@@ -358,8 +360,9 @@ video.onloadedmetadata = function ( event ) {
 	// Volume.
 	setVolumeSlider( video.volume );
 };
+// Video data has loaded.
 video.onloadeddata = function ( event ) {
-	//TODO
+	
 };
 
 // Utility
